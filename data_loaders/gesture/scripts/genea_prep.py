@@ -4,9 +4,10 @@ from tqdm import tqdm
 from data_loaders.gesture.scripts.motion_process import bvh2representations2
 import bvhsdk
 import numpy as np
+import librosa
 
 def main(args):
-    paths_check(args.data_dir)
+    #paths_check(args.data_dir)
     assert args.split in ['all', 'trn', 'tst', 'val'], f"Split {args.split} not recognized. Options: \'all\', \'trn\', \'tst\', \'val\'" # Check if user is trying to process a split that does not exist
     splits = [args.split] if args.split != 'all' else ['trn', 'tst', 'val']
     assert args.step in ['all', 'bvh', 'wav', 'wavlm'], f"Step {args.step} not recognized. Options: \'all\', \'bvh\', \'wav\', \'wavlm\'" # Check if user is trying to process a step that does not exist
@@ -43,14 +44,14 @@ def process_bvh(path, split):
         os.mkdir(savepathrot6d)
     if not os.path.exists(savepathrot):
         os.mkdir(savepathrot)
-    #assert not os.path.exists(savepathrot6d), f"motion_npy_rot6dpos already exists in {savepathrot6d}. Delete it to process again."
-    #assert not os.path.exists(savepathrot), f"motion_npy_rotpos already exists in {savepathrot}. Delete it to process again."
+    assert not os.path.exists(savepathrot6d), f"motion_npy_rot6dpos already exists in {savepathrot6d}. Delete it to process again."
+    assert not os.path.exists(savepathrot), f"motion_npy_rotpos already exists in {savepathrot}. Delete it to process again."
     for file in tqdm(os.listdir(sourcepath)):
-        if not os.path.exists(os.path.join(savepathrot6d, file[:-4] + '.npy')) or not os.path.exists(os.path.join(savepathrot, file[:-4] + '.npy')):
-            anim = bvhsdk.ReadFile(os.path.join(sourcepath, file))
-            rot6dpos, rotpos = bvh2representations2(anim)
-            np.save(os.path.join(savepathrot6d, file[:-4]), rot6dpos)
-            np.save(os.path.join(savepathrot, file[:-4]), rotpos)
+        #if not os.path.exists(os.path.join(savepathrot6d, file[:-4] + '.npy')) or not os.path.exists(os.path.join(savepathrot, file[:-4] + '.npy')):
+        anim = bvhsdk.ReadFile(os.path.join(sourcepath, file))
+        rot6dpos, rotpos = bvh2representations2(anim)
+        np.save(os.path.join(savepathrot6d, file[:-4]), rot6dpos)
+        np.save(os.path.join(savepathrot, file[:-4]), rotpos)
     return savepathrot6d, savepathrot
 
 def compute_meanstd(path, savepath, npstep=1, vel=False):
@@ -68,10 +69,18 @@ def compute_meanstd(path, savepath, npstep=1, vel=False):
     np.save(savepath + '_Std.npy', mean)
 
 
-def process_wav(path, split):
+def process_wav(path, split, sr=16000):
     sourcepath = os.path.join(path, split, 'main-agent', 'wav')
+    savepath = os.path.join(path, split, 'main-agent', 'audio_16k')
+    #assert not os.path.exists(savepath), f"audio_16k already exists in {savepath}. Delete it to process again."
+    if not os.path.exists(savepath):
+        os.mkdir(savepath)
     for file in tqdm(os.listdir(sourcepath)):
-        pass
+        #if not os.path.exists(os.path.join(savepath, file[:-4] + '.npy')):
+        signal, _sr = librosa.load(os.path.join(sourcepath, file), mono=True, sr=sr)
+        assert _sr == sr
+        np.save(os.path.join(savepath, file[:-4]+'.npy'), signal)
+    return savepath
 
 def process_wavlm(path, split):
     sourcepath = os.path.join(path, split, 'main-agent', 'audio16k_npy')

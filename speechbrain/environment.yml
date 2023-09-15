@@ -1,0 +1,8 @@
+name: speechbrain
+channels:
+  - pytorch
+  - anaconda
+  - conda-forge
+  - defaults
+  - pip:
+    - speechbrain

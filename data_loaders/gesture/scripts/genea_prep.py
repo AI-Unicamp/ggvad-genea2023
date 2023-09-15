@@ -1,18 +1,20 @@
 from argparse import ArgumentParser
 import os
-from tqdm import tqdm
-from data_loaders.gesture.scripts.motion_process import bvh2representations2
-import bvhsdk
 import numpy as np
 import librosa
+import torch
+from wavlm.WavLM import WavLM, WavLMConfig
+import torch.nn.functional as F
+from data_loaders.gesture.scripts.motion_process import bvh2representations2
+import bvhsdk
+from tqdm import tqdm
 
 def main(args):
     #paths_check(args.data_dir)
     assert args.split in ['all', 'trn', 'tst', 'val'], f"Split {args.split} not recognized. Options: \'all\', \'trn\', \'tst\', \'val\'" # Check if user is trying to process a split that does not exist
     splits = [args.split] if args.split != 'all' else ['trn', 'tst', 'val']
     assert args.step in ['all', 'bvh', 'wav', 'wavlm'], f"Step {args.step} not recognized. Options: \'all\', \'bvh\', \'wav\', \'wavlm\'" # Check if user is trying to process a step that does not exist
-    steps = [args.step] if args.step != 'all' else ['bvh', 'wav', 'wavlm', 'vad']
-
+    steps = [args.step] if args.step != 'all' else ['bvh', 'wav', 'wavlm']
     print('WARNING: Running all steps and all splits will take a long time.')
     print('Processing splits: ', splits)
     print('Processing steps: ', steps)
@@ -32,20 +34,17 @@ def main(args):
         if 'wavlm' in steps:
             print(f'Processing wavlm for {split} split')
             process_wavlm(args.data_dir, split)
-        if 'vad' in steps:
-            print(f'Processing vad for {split} split')
-            process_vad(args.data_dir, split)
 
 def process_bvh(path, split):
     sourcepath = os.path.join(path, split, 'main-agent', 'bvh')
     savepathrot6d = os.path.join(path, split, 'main-agent', 'motion_npy_rot6dpos')
     savepathrot = os.path.join(path, split, 'main-agent', 'motion_npy_rotpos')
+    assert not os.path.exists(savepathrot6d), f"motion_npy_rot6dpos already exists in {savepathrot6d}. Delete it to process again."
+    assert not os.path.exists(savepathrot), f"motion_npy_rotpos already exists in {savepathrot}. Delete it to process again."
     if not os.path.exists(savepathrot6d):
         os.mkdir(savepathrot6d)
     if not os.path.exists(savepathrot):
         os.mkdir(savepathrot)
-    assert not os.path.exists(savepathrot6d), f"motion_npy_rot6dpos already exists in {savepathrot6d}. Delete it to process again."
-    assert not os.path.exists(savepathrot), f"motion_npy_rotpos already exists in {savepathrot}. Delete it to process again."
     for file in tqdm(os.listdir(sourcepath)):
         #if not os.path.exists(os.path.join(savepathrot6d, file[:-4] + '.npy')) or not os.path.exists(os.path.join(savepathrot, file[:-4] + '.npy')):
         anim = bvhsdk.ReadFile(os.path.join(sourcepath, file))
@@ -66,13 +65,13 @@ def compute_meanstd(path, savepath, npstep=1, vel=False):
     mean = np.mean(all_data, axis=0)
     std = np.std(all_data, axis=0)
     np.save(savepath + '_Mean.npy', mean)
-    np.save(savepath + '_Std.npy', mean)
+    np.save(savepath + '_Std.npy', std)
 
 
 def process_wav(path, split, sr=16000):
     sourcepath = os.path.join(path, split, 'main-agent', 'wav')
-    savepath = os.path.join(path, split, 'main-agent', 'audio_16k')
-    #assert not os.path.exists(savepath), f"audio_16k already exists in {savepath}. Delete it to process again."
+    savepath = os.path.join(path, split, 'main-agent', 'audio16k_npy')
+    assert not os.path.exists(savepath), f"audio_16k_npy already exists in {savepath}. Delete it to process again."
     if not os.path.exists(savepath):
         os.mkdir(savepath)
     for file in tqdm(os.listdir(sourcepath)):
@@ -83,17 +82,49 @@ def process_wav(path, split, sr=16000):
     return savepath
 
 def process_wavlm(path, split):
+    wavlm_layer = 11 
+    fps=30
+    sr=16000
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     sourcepath = os.path.join(path, split, 'main-agent', 'audio16k_npy')
+    savepath = os.path.join(path, split, 'main-agent', 'wavlm_representations')
     #assert os.path.exists(sourcepath), f"audio16k_npy not found in {sourcepath}. Required to process wavlm representations, make sure wav files were processed first."
-    #assert os.path.exists('./wavlm'), f"wavlm model directory not found in current directory."
-    #for file in tqdm(os.listdir(sourcepath)):
-    #    pass
-    pass
-
-def process_vad(path, split):
-    sourcepath = os.path.join(path, split, 'main-agent', 'wav')
+    #assert os.path.exists(savepath), f"wavlm model directory not found in current directory."
+    if not os.path.exists(savepath):
+        os.mkdir(savepath)
+    checkpoint = torch.load('./wavlm/WavLM-Base+.pt')
+    wavlm_cfg = WavLMConfig(checkpoint['cfg'])
+    wavlm = WavLM(wavlm_cfg)
+    #wavlm.to(device)
+    wavlm.load_state_dict(checkpoint['model'])
+    wavlm.eval()
     for file in tqdm(os.listdir(sourcepath)):
-        pass
+        if not os.path.exists(os.path.join(savepath, file)):
+            audio_path = os.path.join(sourcepath, file)
+            # Load with Numpy
+            signal = np.load(audio_path)
+            # Set to model innput format
+            signal = torch.tensor(signal).unsqueeze(0)#.to(device)
+            # Normalize
+            if wavlm_cfg.normalize:
+                signal_norm = torch.nn.functional.layer_norm(signal , signal.shape)
+            else:
+                signal_norm = signal
+            # Run Model (rep=Desired Layer, layer_results=all layers)
+            rep, layer_results = wavlm.extract_features(signal_norm, output_layer=wavlm_layer, ret_layer_results=True)[0]
+            layer_reps = [x.transpose(0, 1) for x, _ in layer_results] # fix shape
+            # Get Number of Seconds of Audio File
+            n_secs = signal.shape[1] / sr
+            # Get Number of poses equivalent to audio file duration, given fps (alignment len)
+            n_pose = n_secs * fps
+            # Interpolate number of representations to match number of poses corresponding to audio file
+            interp_reps = F.interpolate(rep.transpose(1, 2), size=int(n_pose), align_corners=True, mode='linear')
+            # Prepare to save
+            interp_reps = interp_reps.squeeze(0).transpose(0,1).cpu().detach().data.cpu().numpy()
+            # Double check dimension
+            assert (interp_reps.shape[0] == int(np.ceil(n_pose)) or interp_reps.shape[0] == int(np.floor(n_pose)))
+            np.save(os.path.join(savepath, file), interp_reps)
+
 
 def paths_check(data_dir):
     # First check if everything is in place

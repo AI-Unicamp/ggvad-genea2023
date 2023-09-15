@@ -13,7 +13,10 @@ Download the bvhsdk from https://github.com/rltonoli/bvhsdk for motion processin
 Enter the repo
 
 Create docker image using 
+
+```sh
 docker build -t ggvad .
+```
 
 Run container using
 
@@ -23,12 +26,12 @@ docker run --rm -it --gpus device=GPU_NUMBER --userns=host --shm-size 64G -v /MY
 
 for example:
 ```sh
-nvidia-docker run --rm -it -e NVIDIA_VISIBLE_DEVICES=0 --runtime=nvidia --userns=host --shm-size 64G -v C:\ProgramFiles\ggvad-genea2023:/workspace/my_repo -p '8888:8888' --name my_container ggvad:latest /bin/bash
+docker run --rm -it --gpus device=0 --userns=host --shm-size 64G -v C:\ProgramFiles\ggvad-genea2023:/workspace/my_repo -p '8888:8888' --name my_container ggvad:latest /bin/bash
 ```
 
 > ### Cuda version < 12.0:
 > 
-> If you have a previous cuda or nvcc release version you will need to adjust the Dockerfile. Change the first line to "FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel" and remove lines 10-14 (conda is already installed in the pythorch image)
+> If you have a previous cuda or nvcc release version you will need to adjust the Dockerfile. Change the first line to `FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel` and remove lines 10-14 (conda is already installed in the pythorch image)
 > 
 > ```sh
 > nvidia-docker run --rm -it -e NVIDIA_VISIBLE_DEVICES=GPU_NUMBER > --runtime=nvidia --userns=host --shm-size 64G -v /work/rodolfo.tonoli/GestureDiffusion:/workspace/gesture-diffusion/ -p $port --name gestdiff_container$number multimodal-research-group-mdm:latest /bin/bash
@@ -48,10 +51,21 @@ source activate ggvad
 
 ## Dara pre-processing
 
-Navigate to /workspace/ggvad and run
+Download the [WavLM Base +](https://github.com/microsoft/unilm/tree/master/wavlm) and put it into the folder `/wavlm/`
+
+Navigate to `/workspace/ggvad` and run
 
 ```sh
 python ./data_loaders/gesture/scripts/genea_prep.py
 ```
 
+This you convert bvh to npy representations, downsample wav files to 16k and save them as npy arrays, and convert these arrays to wavlm representations. The VAD data must be processed separetely due to python libraries incompatibility. 
+
+### (Optional) Process VAD data
+
+We provide the speech activity information (from speechbrain's VAD) data, but if you wish to process them yourself you should redo the steps of "Preparing environment" as before, but for the speechbrain environment: Build the image using the Dockerfile inside speechbrain (`docker build -t speechbrain .`), run the container (`docker run ... --name CONTAINER_NAME speechbrain:latest /bin/bash`) and run:
+
+```sh
+python ./data_loaders/gesture/scripts/genea_prep_vad.py
+```
 

@@ -1,6 +1,5 @@
 # Removing datasets
 
-dataset
 wavlm/*.pt
 
 # Byte-compiled / optimized / DLL files

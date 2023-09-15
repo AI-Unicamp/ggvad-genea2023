@@ -40,10 +40,10 @@ def process_vad(path, split):
         tmpfile , audio, sr
         )
         boundaries = _VAD.get_speech_prob_file(audio_file=tmpfile, large_chunk_size=4, small_chunk_size=0.2)
-        boundaries = resample(boundaries[0,:,0], int(boundaries.shape[1]*30/100))
+        boundaries = resample(boundaries[0,:,0], int(boundaries.shape[1]*fps/100))
         boundaries[boundaries>=0.5] = 1
         boundaries[boundaries<0.5] = 0
-        np.save(os.path.join(sourcepath, file[:-4]+'.npy'), boundaries)
+        np.save(os.path.join(savepathrot, file[:-4]+'.npy'), boundaries)
 
 def paths_check(data_dir):
     # First check if everything is in place

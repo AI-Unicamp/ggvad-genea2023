@@ -14,14 +14,6 @@ class Genea2023(data.Dataset):
         if self.split not in ['trn', 'val', 'tst']:
             raise ValueError('Split not recognized')
         srcpath = os.path.join(datapath, self.split, 'main-agent/')
-        #if self.split=='train':
-        #    srcpath = os.path.join(datapath, 'trn/main-agent/')
-        #elif self.split in ['val']:
-        #    srcpath = os.path.join(datapath, 'val/main-agent/')
-        #elif self.split == 'tst':
-        #    srcpath = os.path.join(datapath, 'tst/main-agent/')
-        #else:
-        #    raise NotImplementedError
 
         if use_wavlm:
             self.sr = 16000
@@ -46,14 +38,13 @@ class Genea2023(data.Dataset):
         if self.split in ['trn', 'val']:
             self.motionpath = os.path.join(srcpath, 'motion_npy_rotpos')
             self.motionpath_rot6d = os.path.join(srcpath, 'motion_npy_rot6dpos')
-            self.frames = np.load(os.path.join(srcpath, 'rotpos_frames.npy'))
-        else:
-            self.frames = []
-            for audiofile in os.listdir(self.audiopath):
-                if audiofile.endswith('.npy'):
-                    audio = np.load(os.path.join(self.audiopath, audiofile))
-                    self.frames.append( int(audio.shape[0]/self.sr*self.fps))
-            self.frames = np.array(self.frames)
+            #self.frames = np.load(os.path.join(srcpath, 'rotpos_frames.npy'))
+        self.frames = []
+        for audiofile in os.listdir(self.audiopath):
+            if audiofile.endswith('.npy'):
+                audio = np.load(os.path.join(self.audiopath, audiofile))
+                self.frames.append( int(audio.shape[0]/self.sr*self.fps))
+        self.frames = np.array(self.frames)
 
         self.samples_per_file = [int(np.floor( (n - self.window ) / self.step)) for n in self.frames]
         self.samples_cumulative = [np.sum(self.samples_per_file[:i+1]) for i in range(len(self.samples_per_file))]
@@ -238,8 +229,8 @@ class Genea2023(data.Dataset):
     def loadstats(self, statspath):
         self.std = np.load(os.path.join(statspath, 'rotpos_Std.npy'))
         self.mean = np.load(os.path.join(statspath, 'rotpos_Mean.npy'))
-        self.mfcc_std = np.load(os.path.join(statspath, 'mfccs_Std.npy'))
-        self.mfcc_mean = np.load(os.path.join(statspath, 'mfccs_Mean.npy'))
+        #self.mfcc_std = np.load(os.path.join(statspath, 'mfccs_Std.npy'))
+        #self.mfcc_mean = np.load(os.path.join(statspath, 'mfccs_Mean.npy'))
         self.rot6dpos_std = np.load(os.path.join(statspath, 'rot6dpos_Std.npy'))
         self.rot6dpos_mean = np.load(os.path.join(statspath, 'rot6dpos_Mean.npy'))
         self.vel_std = np.load(os.path.join(statspath, 'velrotpos_Std.npy'))

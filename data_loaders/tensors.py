@@ -54,6 +54,9 @@ def collate(batch):
         vadbatch = [b['vad'] for b in notnone_batches]
         vadbatch = torch.cat(vadbatch, dim=0)
         cond['y'].update({'vad': vadbatch})
+    if 'takename' in notnone_batches[0]:
+        takenamebatch = [b['takename'] for b in notnone_batches]
+        cond['y'].update({'takename': takenamebatch})
     return motion, cond
 
 # an adapter to our collate func
@@ -67,6 +70,7 @@ def gg_collate(batch):
         'audio_rep': torch.from_numpy(b[4]).float(),        # [1, AUDIO_HID_DIM, 1, CHUNK_LEN] , (AUDIO_HID_DIM = MFCC_DIM or 768)
         'seed': torch.tensor(b[5].T).float().unsqueeze(1),  # [n_seed_poses, J] -> [J, 1, n_seed_poses]
         'vad': torch.from_numpy(b[6]).long(),              # [1, CHUNK_LEN] 
+        'takename': b[7]
     } for b in batch]
     return collate(adapted_batch)
 

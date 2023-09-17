@@ -31,7 +31,7 @@ def main():
         projectname = os.path.basename(os.path.normpath(args.save_dir))
         import wandb
         wandb.login(anonymous="allow")
-        wandb.init(project='debug_training_loop', config=vars(args))
+        wandb.init(project='ggvad-genea2023', config=vars(args))
         args.wandb = wandb
 
     dist_util.setup_dist(args.device)
@@ -45,8 +45,7 @@ def main():
 
     print('Total params: %.2fM' % (sum(p.numel() for p in model.parameters_wo_clip()) / 1000000.0))
     print("Training...")
-    TrainLoop(args, train_platform, model, diffusion, data).run_loop()
-    train_platform.close()
+    TrainLoop(args, model, diffusion, data).run_loop()
 
 if __name__ == "__main__":
     main()

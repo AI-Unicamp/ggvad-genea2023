@@ -116,9 +116,6 @@ class MDM(nn.Module):
         self.output_process = OutputProcess(self.data_rep, self.input_feats, self.latent_dim, self.njoints,
                                             self.nfeats)
 
-        # Unused?
-        self.rot2xyz = Rotation2xyz(device='cpu', dataset=self.dataset)
-
         self.log_train = False
         self.batch_log = {'text': [], 
                           'vad': [],
@@ -358,13 +355,13 @@ class MDM(nn.Module):
             texts = clip.tokenize(raw_text, truncate=True).to(device) # [bs, context_length] # if n_tokens > 77 -> will truncate
         return self.clip_model.encode_text(texts).float()
     
-    def _apply(self, fn):
-        super()._apply(fn)
-        self.rot2xyz.smpl_model._apply(fn)
-
-    def train(self, *args, **kwargs):
-        super().train(*args, **kwargs)
-        self.rot2xyz.smpl_model.train(*args, **kwargs)
+    #def _apply(self, fn):
+    #    super()._apply(fn)
+    #    self.rot2xyz.smpl_model._apply(fn)
+#
+    #def train(self, *args, **kwargs):
+    #    super().train(*args, **kwargs)
+    #    self.rot2xyz.smpl_model.train(*args, **kwargs)
 
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):

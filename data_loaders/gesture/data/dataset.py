@@ -40,10 +40,17 @@ class Genea2023(data.Dataset):
             self.motionpath_rot6d = os.path.join(srcpath, 'motion_npy_rot6dpos')
             #self.frames = np.load(os.path.join(srcpath, 'rotpos_frames.npy'))
         self.frames = []
-        for audiofile in os.listdir(self.audiopath):
-            if audiofile.endswith('.npy'):
-                audio = np.load(os.path.join(self.audiopath, audiofile))
-                self.frames.append( int(audio.shape[0]/self.sr*self.fps))
+
+        with open(os.path.join(srcpath, '../metadata.csv')) as csvfile:
+            reader = csv.reader(csvfile, delimiter=',')
+            self.takes = [take for take in reader]
+            self.takes = self.takes[1:]
+            for take in self.takes:
+                take[0] += '_main-agent'
+
+        for motionfile in self.takes:
+            motion = np.load(os.path.join(self.motionpath_rot6d, motionfile[0] + '.npy'))
+            self.frames.append(motion.shape[0])
         self.frames = np.array(self.frames)
 
         self.samples_per_file = [int(np.floor( (n - self.window ) / self.step)) for n in self.frames]
@@ -60,13 +67,6 @@ class Genea2023(data.Dataset):
             self.vad_path = os.path.join(srcpath, "vad")
         self.vadfromtext = vadfromtext
         if self.vadfromtext: print('Getting speech activity from text')
-
-        with open(os.path.join(srcpath, '../metadata.csv')) as csvfile:
-            reader = csv.reader(csvfile, delimiter=',')
-            self.takes = [take for take in reader]
-            self.takes = self.takes[1:]
-            for take in self.takes:
-                take[0] += '_main-agent'
 
         self.alljoints = {'body_world':0,'b_root':1,'b_spine0':2,'b_spine1':3,'b_spine2':4,'b_spine3':5,'b_neck0':6,'b_head':7,'b_head_null':8,'b_l_eye':9,'b_r_eye':10,'b_jaw':11,'b_jaw_null':12,'b_teeth':13,'b_tongue0':14,'b_tongue1':15,'b_tongue2':16,'b_tongue3':17,'b_tongue4':18,'b_l_tongue4_1':19,'b_r_tongue4_1':20,'b_l_tongue3_1':21,'b_r_tongue3_1':22,'b_l_tongue2_1':23,'b_r_tongue2_1':24,'b_r_tongue1_1':25,'b_l_tongue1_1':26,'b_r_shoulder':27,'p_r_scap':28,'b_r_arm':29,'b_r_arm_twist':30,'b_r_forearm':31,'b_r_wrist_twist':32,'b_r_wrist':33,'b_r_index1':34,'b_r_index2':35,'b_r_index3':36,'b_r_ring1':37,'b_r_ring2':38,'b_r_ring3':39,'b_r_middle1':40,'b_r_middle2':41,'b_r_middle3':42,'b_r_pinky1':43,'b_r_pinky2':44,'b_r_pinky3':45,'b_r_thumb0':46,'b_r_thumb1':47,'b_r_thumb2':48,'b_r_thumb3':49,'b_l_shoulder':50,'p_l_delt':51,'p_l_scap':52,'b_l_arm':53,'b_l_arm_twist':54,'b_l_forearm':55,'b_l_wrist_twist':56,'b_l_wrist':57,'b_l_thumb0':58,'b_l_thumb1':59,'b_l_thumb2':60,'b_l_thumb3':61,'b_l_index1':62,'b_l_index2':63,'b_l_index3':64,'b_l_middle1':65,'b_l_middle2':66,'b_l_middle3':67,'b_l_ring1':68,'b_l_ring2':69,'b_l_ring3':70,'b_l_pinky1':71,'b_l_pinky2':72,'b_l_pinky3':73,'p_navel':74,'b_r_upleg':75,'b_r_leg':76,'b_r_foot_twist':77,'b_r_foot':78,'b_l_upleg':79,'b_l_leg':80,'b_l_foot_twist':81,'b_l_foot':82}
 
@@ -99,7 +99,7 @@ class Genea2023(data.Dataset):
                 vad = self.__getvad(file_idx, sample)
         else:
             vad = np.ones(int(self.window))     # Dummy
-        return motion, text, self.window, audio, audio_rep, seed_poses, vad
+        return motion, text, self.window, audio, audio_rep, seed_poses, vad, take_name
 
     def __len__(self):
         return self.length

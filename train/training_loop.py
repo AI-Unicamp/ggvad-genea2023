@@ -145,7 +145,7 @@ class TrainLoop:
                     dictlog['audio'][i:e] = self.model.batch_log['audio']
                     dictlog['poses'][i:e] = self.model.batch_log['poses']
 
-                if self.step % self.log_interval == 0:
+                if self.step % self.log_interval == 0 and self.log_wandb:
 
                     mean_, std_ = self.model.batch_log['embs'][1], self.model.batch_log['embs'][0]
                     mean = [ [str(i), v] for i,v in enumerate(mean_)]

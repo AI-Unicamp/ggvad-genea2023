@@ -2,23 +2,15 @@
 
 ## Preparing environment
 
-Git clone this repo
+1. Git clone this repo
 
-Get the GENEA Challenge 2023 dataset and put it into ./dataset/
-(Our system is monadic so you'll only need the main-agent's data)
-
-Download the bvhsdk from https://github.com/rltonoli/bvhsdk for motion processing
-(Alternatively you could adapt the code to use PyMO: https://github.com/omimo/PyMO)
-
-Enter the repo
-
-Create docker image using 
+2. Enter the repo and create docker image using 
 
 ```sh
 docker build -t ggvad .
 ```
 
-Run container using
+3. Run container using
 
 ```sh
 docker run --rm -it --gpus device=GPU_NUMBER --userns=host --shm-size 64G -v /MY_DIR/ggvad-genea2023:/workspace/ggvad/ -p PORT_NUMBR --name CONTAINER_NAME ggvad:latest /bin/bash
@@ -44,24 +36,27 @@ example:
 sh ggvad_container.sh -g 0 -n my_container -p '8888:8888'
 ```
 
-Activate environment:
+4. Activate cuda environment:
 ```sh
 source activate ggvad
 ```
 
-## Dara pre-processing
+## Data pre-processing
 
-Download the [WavLM Base +](https://github.com/microsoft/unilm/tree/master/wavlm) and put it into the folder `/wavlm/`
+1. Get the GENEA Challenge 2023 dataset and put it into `./dataset/`
+(Our system is monadic so you'll only need the main-agent's data)
 
-Navigate to `/workspace/ggvad` and run
+2. Download the [WavLM Base +](https://github.com/microsoft/unilm/tree/master/wavlm) and put it into the folder `/wavlm/`
+
+3. Navigate to `/workspace/ggvad` and run
 
 ```sh
 python ./data_loaders/gesture/scripts/genea_prep.py
 ```
 
-This you convert bvh to npy representations, downsample wav files to 16k and save them as npy arrays, and convert these arrays to wavlm representations. The VAD data must be processed separetely due to python libraries incompatibility. 
+This will convert the bvh files to npy representations, downsample wav files to 16k and save them as npy arrays, and convert these arrays to wavlm representations. The VAD data must be processed separetely due to python libraries incompatibility. 
 
-### (Optional) Process VAD data
+4. (Optional) Process VAD data
 
 We provide the speech activity information (from speechbrain's VAD) data, but if you wish to process them yourself you should redo the steps of "Preparing environment" as before, but for the speechbrain environment: Build the image using the Dockerfile inside speechbrain (`docker build -t speechbrain .`), run the container (`docker run ... --name CONTAINER_NAME speechbrain:latest /bin/bash`) and run:
 
@@ -69,3 +64,12 @@ We provide the speech activity information (from speechbrain's VAD) data, but if
 python ./data_loaders/gesture/scripts/genea_prep_vad.py
 ```
 
+## Train model
+
+To train the model described in the paper use the following command inside the repo:
+
+```sh
+python -m train.train_mdm --save_dir save/my_model_run --dataset genea2023+ --step 10  --use_text --use_vad True --use_wavlm True
+```
+
+## Generate

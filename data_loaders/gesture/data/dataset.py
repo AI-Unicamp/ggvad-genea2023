@@ -38,8 +38,7 @@ class Genea2023(data.Dataset):
         if self.split in ['trn', 'val']:
             self.motionpath = os.path.join(srcpath, 'motion_npy_rotpos')
             self.motionpath_rot6d = os.path.join(srcpath, 'motion_npy_rot6dpos')
-            #self.frames = np.load(os.path.join(srcpath, 'rotpos_frames.npy'))
-        self.frames = []
+        
 
         with open(os.path.join(srcpath, '../metadata.csv')) as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
@@ -48,9 +47,18 @@ class Genea2023(data.Dataset):
             for take in self.takes:
                 take[0] += '_main-agent'
 
-        for motionfile in self.takes:
-            motion = np.load(os.path.join(self.motionpath_rot6d, motionfile[0] + '.npy'))
-            self.frames.append(motion.shape[0])
+        # Here we use the motion files to get the number of frames per take (there are some takes that audio files are longer for the trn and val sets)
+        self.frames = []
+        if self.split in ['trn', 'val']:
+            for motionfile in self.takes:
+                motion = np.load(os.path.join(self.motionpath_rot6d, motionfile[0] + '.npy'))
+                self.frames.append(motion.shape[0])
+        elif self.split in ['tst']:
+            for audiofile in os.listdir(self.audiopath):
+                if audiofile.endswith('.npy'):
+                    audio = np.load(os.path.join(self.audiopath, audiofile))
+                    self.frames.append( int(audio.shape[0]/self.sr*self.fps))
+            self.frames = np.array(self.frames)
         self.frames = np.array(self.frames)
 
         self.samples_per_file = [int(np.floor( (n - self.window ) / self.step)) for n in self.frames]
@@ -305,7 +313,7 @@ class Genea2023(data.Dataset):
         motion, seed_poses = np.zeros((self.window, feats)), np.zeros((self.n_seed_poses, feats)) #dummy
 
         # Attention: this is not collate-ready!
-        return motion, batch_text, self.window, batch_audio, batch_audio_rep, seed_poses, max_length, vad_vals
+        return motion, batch_text, self.window, batch_audio, batch_audio_rep, seed_poses, max_length, vad_vals, self.takes[:num_samples]
     
     def getvalbatch(self, num_takes, index):
         # Get batch of data from the validation set, index refer to the chunk that you want to get

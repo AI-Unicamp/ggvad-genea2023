@@ -100,7 +100,7 @@ def add_data_options(parser):
     group = parser.add_argument_group('dataset')
     group.add_argument("--dataset", default='humanml', choices=['genea2023+','genea2023'], type=str,
                        help="Dataset name (choose from list).")
-    group.add_argument("--data_dir", default="", type=str,
+    group.add_argument("--data_dir", default="./dataset/Genea2023/", type=str,
                        help="If empty, will use defaults according to the specified dataset.")
     group.add_argument("--num_frames", default=120, type=int,
                        help="Window length to be used in the dataset.")

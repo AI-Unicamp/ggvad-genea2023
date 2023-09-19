@@ -1,5 +1,7 @@
 # ggvad-genea2023
 
+Implementaion of the paper [Gesture Generation with Diffusion Models Aided by Speech Activity Information](https://openreview.net/forum?id=S9Efb3MoiZ)
+
 ## Preparing environment
 
 1. Git clone this repo
@@ -26,7 +28,7 @@ docker run --rm -it --gpus device=0 --userns=host --shm-size 64G -v C:\ProgramFi
 > If you have a previous cuda or nvcc release version you will need to adjust the Dockerfile. Change the first line to `FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel` and remove lines 10-14 (conda is already installed in the pythorch image)
 > 
 > ```sh
-> nvidia-docker run --rm -it -e NVIDIA_VISIBLE_DEVICES=GPU_NUMBER > --runtime=nvidia --userns=host --shm-size 64G -v /work/rodolfo.tonoli/GestureDiffusion:/workspace/gesture-diffusion/ -p $port --name gestdiff_container$number multimodal-research-group-mdm:latest /bin/bash
+> nvidia-docker run --rm -it -e NVIDIA_VISIBLE_DEVICES=GPU_NUMBER --runtime=nvidia --userns=host --shm-size 64G -v /work/rodolfo.tonoli/GestureDiffusion:/workspace/gesture-diffusion/ -p $port --name gestdiff_container$number multimodal-research-group-mdm:latest /bin/bash
 > ```
 
 
@@ -72,4 +74,14 @@ To train the model described in the paper use the following command inside the r
 python -m train.train_mdm --save_dir save/my_model_run --dataset genea2023+ --step 10  --use_text --use_vad True --use_wavlm True
 ```
 
-## Generate
+## Gesture Generation
+
+Generate motion using the trained model by running the following command. If you wish to generate gestures with the pretrained model of the Genea Challenge, use `--model_path ./save/default_vad_wavlm/model000290000.pt` 
+
+```sh
+python -m sample.generate --model_path ./save/my_model_run/model000XXXXXX.pt 
+```
+
+## Render
+
+To render the official Genea 2023 visualizations follow the instructions provided [here](https://github.com/genea-workshop/genea_numerical_evaluations)

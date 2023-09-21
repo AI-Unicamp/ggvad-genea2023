@@ -21,7 +21,8 @@ class GeneaEvaluator:
         self.model = model
         self.diffusion = diffusion
         self.dataloader = get_dataset_loader(name=args.dataset, 
-                                        batch_size=args.batch_size, 
+                                        batch_size=args.batch_size,
+                                        data_dir=args.data_dir, 
                                         num_frames=args.num_frames, 
                                         step=args.num_frames, #no overlap
                                         use_wavlm=args.use_wavlm, 

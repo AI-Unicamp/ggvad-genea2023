@@ -25,7 +25,7 @@ docker run --rm -it --gpus device=0 --userns=host --shm-size 64G -v C:\ProgramFi
 
 > ### Cuda version < 12.0:
 > 
-> If you have a previous cuda or nvcc release version you will need to adjust the Dockerfile. Change the first line to `FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel` and remove lines 10-14 (conda is already installed in the pythorch image)
+> If you have a previous cuda or nvcc release version you will need to adjust the Dockerfile. Change the first line to `FROM pytorch/pytorch:1.6.0-cuda10.1-cudnn7-devel` and remove lines 10-14 (conda is already installed in the pythorch image). Then, run container using:
 > 
 > ```sh
 > nvidia-docker run --rm -it -e NVIDIA_VISIBLE_DEVICES=GPU_NUMBER --runtime=nvidia --userns=host --shm-size 64G -v /work/rodolfo.tonoli/GestureDiffusion:/workspace/gesture-diffusion/ -p $port --name gestdiff_container$number multimodal-research-group-mdm:latest /bin/bash

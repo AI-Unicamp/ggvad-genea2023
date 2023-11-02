@@ -85,3 +85,17 @@ python -m sample.generate --model_path ./save/my_model_run/model000XXXXXX.pt
 ## Render
 
 To render the official Genea 2023 visualizations follow the instructions provided [here](https://github.com/genea-workshop/genea_numerical_evaluations)
+
+## Cite
+
+If you with to cite this repo or the paper
+
+```text
+@incollection{tonoli2023gesture,
+  title={Gesture Generation with Diffusion Models Aided by Speech Activity Information},
+  author={Tonoli, Rodolfo L and Marques, Leonardo B de MM and Ueda, Lucas H and Costa, Paula Dornhofer Paro},
+  booktitle={International Cconference on Multimodal Interaction},
+  pages={193--199},
+  year={2023}
+}
+```

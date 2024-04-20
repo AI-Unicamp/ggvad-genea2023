@@ -50,10 +50,10 @@ source activate ggvad
 
 2. Download the [WavLM Base +](https://github.com/microsoft/unilm/tree/master/wavlm) and put it into the folder `/wavlm/`
 
-3. Navigate to `/workspace/ggvad` and run
+3. Inside the folder `/workspace/ggvad`, run
 
 ```sh
-python ./data_loaders/gesture/scripts/genea_prep.py
+python -m data_loaders.gesture.scripts.genea_prep
 ```
 
 This will convert the bvh files to npy representations, downsample wav files to 16k and save them as npy arrays, and convert these arrays to wavlm representations. The VAD data must be processed separetely due to python libraries incompatibility. 
@@ -63,7 +63,7 @@ This will convert the bvh files to npy representations, downsample wav files to 
 We provide the speech activity information (from speechbrain's VAD) data, but if you wish to process them yourself you should redo the steps of "Preparing environment" as before, but for the speechbrain environment: Build the image using the Dockerfile inside speechbrain (`docker build -t speechbrain .`), run the container (`docker run ... --name CONTAINER_NAME speechbrain:latest /bin/bash`) and run:
 
 ```sh
-python ./data_loaders/gesture/scripts/genea_prep_vad.py
+python -m data_loaders.gesture.scripts.genea_prep_vad
 ```
 
 ## Train model
@@ -84,17 +84,17 @@ python -m sample.generate --model_path ./save/my_model_run/model000XXXXXX.pt
 
 ## Render
 
-To render the official Genea 2023 visualizations follow the instructions provided [here](https://github.com/genea-workshop/genea_numerical_evaluations)
+To render the official Genea 2023 visualizations follow the instructions provided [here](https://github.com/TeoNikolov/genea_visualizer/)
 
 ## Cite
 
 If you with to cite this repo or the paper
 
 ```text
-@incollection{tonoli2023gesture,
+@inproceedings{tonoli2023gesture,
   title={Gesture Generation with Diffusion Models Aided by Speech Activity Information},
   author={Tonoli, Rodolfo L and Marques, Leonardo B de MM and Ueda, Lucas H and Costa, Paula Dornhofer Paro},
-  booktitle={International Cconference on Multimodal Interaction},
+  booktitle={Companion Publication of the 25th International Conference on Multimodal Interaction},
   pages={193--199},
   year={2023}
 }

@@ -215,6 +215,7 @@ def main():
 
 def load_dataset(args, batch_size):
     data = get_dataset_loader(name=args.dataset,
+                              data_dir=args.data_dir,
                               batch_size=batch_size,
                               num_frames=args.num_frames,
                               split='tst',

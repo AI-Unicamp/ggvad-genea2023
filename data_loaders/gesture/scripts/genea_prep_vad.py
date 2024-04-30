@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 import os
 import numpy as np
 import torch
-from speechbrain.pretrained import VAD
+from speechbrain.inference.VAD import VAD
 import torchaudio
 from scipy.signal import resample
 from tqdm import tqdm

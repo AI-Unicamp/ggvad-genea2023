@@ -36,10 +36,10 @@ class GeneaEvaluator:
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         
 
-    def eval(self, samples=None, chunks=None):
+    def eval(self, samples=None):
         print('Starting evaluation...')
         n_samples = samples if samples else len(self.data.takes)
-        n_chunks = chunks if chunks else np.min(self.data.samples_per_file)
+        n_chunks = np.min(self.data.samples_per_file)
         rot, gt_rot, pos, gt_pos, vad  = self.sampleval(n_samples, n_chunks)
         pos, rot = mp.filter_and_interp(rot, pos, num_frames=self.args.num_frames)
 
@@ -55,7 +55,7 @@ class GeneaEvaluator:
             #listposgt.append(mp.posfrombvh(bvhreference))
 
         # Compute FGD
-        fgd_on_feat = self.fgd(listpos, listposgt, n_samples, n_chunks)
+        fgd_on_feat = self.fgd(listpos, listposgt, n_samples, stride=40)
 
         histfig = self.getvelhist(rot, vad)
         
@@ -136,16 +136,26 @@ class GeneaEvaluator:
         axs.set_yscale('log')
         return fig
     
-    def fgd(self, listpos, listposgt=None, n_samples=100, n_chunks=1):
+    def fgd(self, listpos, listposgt=None, n_samples=100, stride=None):
         # "Direct" ground truth positions
-        real_val = make_tensor(f'./dataset/Genea2023/val/main-agent/motion_npy_rotpos', self.args.num_frames, max_files=n_samples, n_chunks=n_chunks).to(self.device)
+        real_val = make_tensor(f'./dataset/Genea2023/val/main-agent/motion_npy_rotpos', self.args.num_frames, max_files=n_samples, n_chunks=None, stride=stride).to(self.device)
+        real_trn = make_tensor(f'./dataset/Genea2023/trn/main-agent/motion_npy_rotpos', self.args.num_frames, max_files=n_samples, n_chunks=None, stride=stride).to(self.device)
 
         #gt_data = self.fgd_prep(listposgt).to(self.device)
-        test_data = self.fgd_prep(listpos).to(self.device)
+        test_data = self.fgd_prep(listpos, stride=stride).to(self.device)
+
+        print('Samples shape:')
+        print(test_data.shape)
+        print('Validation shape:')
+        print(real_val.shape)
+        print('Train shape:')
+        print(real_trn.shape)
 
         fgd_on_feat = self.run_fgd(real_val, test_data)
         print(f'Sampled to validation: {fgd_on_feat:8.3f}')
 
+        fgd_on_feat_ = self.run_fgd(real_trn, test_data)
+        print(f'Sampled to train: {fgd_on_feat_:8.3f}')
         #fgd_on_feat = self.run_fgd(gt_data, test_data)
         #print(f'Sampled to validation from pipeline: {fgd_on_feat:8.3f}')
 

@@ -196,11 +196,13 @@ class GaussianDiffusion:
         )
 
         self.l2_loss = lambda a, b: (a - b) ** 2  # th.nn.MSELoss(reduction='none')  # must be None for handling mask later on.
+        self.smooth_l1_loss = th.nn.SmoothL1Loss(reduction='none')
 
     def masked_l2(self, a, b, mask):
         # assuming a.shape == b.shape == bs, J, Jdim, seqlen
         # assuming mask.shape == bs, 1, 1, seqlen
-        loss = self.l2_loss(a, b)
+        #loss = self.l2_loss(a, b)
+        loss = self.smooth_l1_loss(a, b)
         loss = sum_flat(loss * mask.float())  # gives \sigma_euclidean over unmasked elements
         n_entries = a.shape[1] * a.shape[2]
         non_zero_elements = sum_flat(mask) * n_entries

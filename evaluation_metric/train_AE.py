@@ -75,6 +75,8 @@ def make_tensor(path, n_frames, stride=None, max_files=64, n_chunks=None):
     else:
         files = [path]
 
+    files.sort()
+
     # Make sure we don't run out of memory
     max_files = max_files if max_files < len(files) else len(files)
 

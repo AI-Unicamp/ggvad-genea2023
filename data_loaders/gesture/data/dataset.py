@@ -156,11 +156,11 @@ class Genea2023(data.Dataset):
     def __getaudiofeats(self, file, sample):
 
         # Load Audio
-        signal = np.load(os.path.join(self.audiopath,self.takes[file][0]+'.npy'))
+        signal = np.load(os.path.join(self.motionpath,'..', 'audio16k_npy',self.takes[file][0]+'.npy'))
         
         # Cut Chunk
-        i = sample*self.sr*self.step/self.fps
-        signal = signal[ int(i) : int(i+self.window*self.sr/self.fps) ]
+        i = sample*16000*self.step/self.fps
+        signal = signal[ int(i) : int(i+self.window*16000/self.fps) ]
 
         if self.use_wavlm:
             # Cut Chunk
@@ -178,10 +178,10 @@ class Genea2023(data.Dataset):
     def __compute_audiofeats(self, signal):
            
             # MFCCs
-            mfcc_vectors = mfcc(signal, winlen=0.06, winstep= (1/self.fps), samplerate=self.sr, numcep=27, nfft=5000)
+            mfcc_vectors = mfcc(signal, winlen=0.06, winstep= (1/self.fps), samplerate=16000, numcep=27, nfft=5000)
 
             # Normalize
-            mfcc_vectors = (mfcc_vectors - self.mfcc_mean) / self.mfcc_std
+            #mfcc_vectors = (mfcc_vectors - self.mfcc_mean) / self.mfcc_std
 
             # Format
             mfcc_vectors = mfcc_vectors.T
